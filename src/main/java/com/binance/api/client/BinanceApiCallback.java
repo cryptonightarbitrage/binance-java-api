@@ -5,7 +5,6 @@ package com.binance.api.client;
  *
  * @param <T> the return type from the callback
  */
-@FunctionalInterface
 public interface BinanceApiCallback<T> {
 
     /**
@@ -20,5 +19,5 @@ public interface BinanceApiCallback<T> {
      *
      * @param cause the cause of the failure
      */
-    default void onFailure(Throwable cause) {}
+    void onFailure(Throwable cause);
 }
