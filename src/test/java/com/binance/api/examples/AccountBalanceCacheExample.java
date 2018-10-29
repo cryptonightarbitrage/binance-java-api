@@ -1,10 +1,12 @@
 package com.binance.api.examples;
 
+import com.binance.api.client.BinanceApiCallback;
 import com.binance.api.client.BinanceApiClientFactory;
 import com.binance.api.client.BinanceApiRestClient;
 import com.binance.api.client.BinanceApiWebSocketClient;
 import com.binance.api.client.domain.account.Account;
 import com.binance.api.client.domain.account.AssetBalance;
+import com.binance.api.client.domain.event.UserDataUpdateEvent;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -57,13 +59,21 @@ public class AccountBalanceCacheExample {
   private void startAccountBalanceEventStreaming(String listenKey) {
     BinanceApiWebSocketClient client = clientFactory.newWebSocketClient();
 
-    client.onUserDataUpdateEvent(listenKey, response -> {
-      if (response.getEventType() == ACCOUNT_UPDATE) {
-        // Override cached asset balances
-        for (AssetBalance assetBalance : response.getAccountUpdateEvent().getBalances()) {
-          accountBalanceCache.put(assetBalance.getAsset(), assetBalance);
+    client.onUserDataUpdateEvent(listenKey, new BinanceApiCallback<UserDataUpdateEvent>() {
+      @Override
+      public void onResponse(UserDataUpdateEvent response) {
+        if (response.getEventType() == ACCOUNT_UPDATE) {
+          // Override cached asset balances
+          for (AssetBalance assetBalance : response.getAccountUpdateEvent().getBalances()) {
+            accountBalanceCache.put(assetBalance.getAsset(), assetBalance);
+          }
+          System.out.println(accountBalanceCache);
         }
-        System.out.println(accountBalanceCache);
+      }
+
+      @Override
+      public void onFailure(Throwable cause) {
+        System.out.println(cause);
       }
     });
   }

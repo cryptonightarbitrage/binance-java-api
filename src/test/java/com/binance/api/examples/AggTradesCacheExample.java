@@ -1,8 +1,10 @@
 package com.binance.api.examples;
 
+import com.binance.api.client.BinanceApiCallback;
 import com.binance.api.client.BinanceApiClientFactory;
 import com.binance.api.client.BinanceApiRestClient;
 import com.binance.api.client.BinanceApiWebSocketClient;
+import com.binance.api.client.domain.event.AggTradeEvent;
 import com.binance.api.client.domain.market.AggTrade;
 
 import java.util.HashMap;
@@ -46,23 +48,31 @@ public class AggTradesCacheExample {
     BinanceApiClientFactory factory = BinanceApiClientFactory.newInstance();
     BinanceApiWebSocketClient client = factory.newWebSocketClient();
 
-    client.onAggTradeEvent(symbol.toLowerCase(), response -> {
-      Long aggregatedTradeId = response.getAggregatedTradeId();
-      AggTrade updateAggTrade = aggTradesCache.get(aggregatedTradeId);
-      if (updateAggTrade == null) {
-        // new agg trade
-        updateAggTrade = new AggTrade();
-      }
-      updateAggTrade.setAggregatedTradeId(aggregatedTradeId);
-      updateAggTrade.setPrice(response.getPrice());
-      updateAggTrade.setQuantity(response.getQuantity());
-      updateAggTrade.setFirstBreakdownTradeId(response.getFirstBreakdownTradeId());
-      updateAggTrade.setLastBreakdownTradeId(response.getLastBreakdownTradeId());
-      updateAggTrade.setBuyerMaker(response.isBuyerMaker());
+    client.onAggTradeEvent(symbol.toLowerCase(), new BinanceApiCallback<AggTradeEvent>() {
+      @Override
+      public void onResponse(AggTradeEvent response) {
+        Long aggregatedTradeId = response.getAggregatedTradeId();
+        AggTrade updateAggTrade = aggTradesCache.get(aggregatedTradeId);
+        if (updateAggTrade == null) {
+          // new agg trade
+          updateAggTrade = new AggTrade();
+        }
+        updateAggTrade.setAggregatedTradeId(aggregatedTradeId);
+        updateAggTrade.setPrice(response.getPrice());
+        updateAggTrade.setQuantity(response.getQuantity());
+        updateAggTrade.setFirstBreakdownTradeId(response.getFirstBreakdownTradeId());
+        updateAggTrade.setLastBreakdownTradeId(response.getLastBreakdownTradeId());
+        updateAggTrade.setBuyerMaker(response.isBuyerMaker());
 
-      // Store the updated agg trade in the cache
-      aggTradesCache.put(aggregatedTradeId, updateAggTrade);
-      System.out.println(updateAggTrade);
+        // Store the updated agg trade in the cache
+        aggTradesCache.put(aggregatedTradeId, updateAggTrade);
+        System.out.println(updateAggTrade);
+      }
+
+      @Override
+      public void onFailure(Throwable cause) {
+        System.out.println(cause);
+      }
     });
   }
 

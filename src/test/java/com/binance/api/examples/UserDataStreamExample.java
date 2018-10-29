@@ -1,10 +1,12 @@
 package com.binance.api.examples;
 
+import com.binance.api.client.BinanceApiCallback;
 import com.binance.api.client.BinanceApiClientFactory;
 import com.binance.api.client.BinanceApiRestClient;
 import com.binance.api.client.BinanceApiWebSocketClient;
 import com.binance.api.client.domain.event.AccountUpdateEvent;
 import com.binance.api.client.domain.event.OrderTradeUpdateEvent;
+import com.binance.api.client.domain.event.UserDataUpdateEvent;
 import com.binance.api.client.domain.event.UserDataUpdateEvent.UserDataUpdateEventType;
 
 /**
@@ -26,21 +28,29 @@ public class UserDataStreamExample {
     BinanceApiWebSocketClient webSocketClient = factory.newWebSocketClient();
 
     // Listen for changes in the account
-    webSocketClient.onUserDataUpdateEvent(listenKey, response -> {
-      if (response.getEventType() == UserDataUpdateEventType.ACCOUNT_UPDATE) {
-        AccountUpdateEvent accountUpdateEvent = response.getAccountUpdateEvent();
-        // Print new balances of every available asset
-        System.out.println(accountUpdateEvent.getBalances());
-      } else {
-        OrderTradeUpdateEvent orderTradeUpdateEvent = response.getOrderTradeUpdateEvent();
-        // Print details about an order/trade
-        System.out.println(orderTradeUpdateEvent);
+    webSocketClient.onUserDataUpdateEvent(listenKey, new BinanceApiCallback<UserDataUpdateEvent>() {
+      @Override
+      public void onResponse(UserDataUpdateEvent response) {
+        if (response.getEventType() == UserDataUpdateEventType.ACCOUNT_UPDATE) {
+          AccountUpdateEvent accountUpdateEvent = response.getAccountUpdateEvent();
+          // Print new balances of every available asset
+          System.out.println(accountUpdateEvent.getBalances());
+        } else {
+          OrderTradeUpdateEvent orderTradeUpdateEvent = response.getOrderTradeUpdateEvent();
+          // Print details about an order/trade
+          System.out.println(orderTradeUpdateEvent);
 
-        // Print original quantity
-        System.out.println(orderTradeUpdateEvent.getOriginalQuantity());
+          // Print original quantity
+          System.out.println(orderTradeUpdateEvent.getOriginalQuantity());
 
-        // Or price
-        System.out.println(orderTradeUpdateEvent.getPrice());
+          // Or price
+          System.out.println(orderTradeUpdateEvent.getPrice());
+        }
+      }
+
+      @Override
+      public void onFailure(Throwable cause) {
+        System.out.println(cause);
       }
     });
     System.out.println("Waiting for events...");

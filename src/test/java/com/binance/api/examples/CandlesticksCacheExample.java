@@ -1,8 +1,10 @@
 package com.binance.api.examples;
 
+import com.binance.api.client.BinanceApiCallback;
 import com.binance.api.client.BinanceApiClientFactory;
 import com.binance.api.client.BinanceApiRestClient;
 import com.binance.api.client.BinanceApiWebSocketClient;
+import com.binance.api.client.domain.event.CandlestickEvent;
 import com.binance.api.client.domain.market.Candlestick;
 import com.binance.api.client.domain.market.CandlestickInterval;
 
@@ -46,29 +48,37 @@ public class CandlesticksCacheExample {
     BinanceApiClientFactory factory = BinanceApiClientFactory.newInstance();
     BinanceApiWebSocketClient client = factory.newWebSocketClient();
 
-    client.onCandlestickEvent(symbol.toLowerCase(), interval, response -> {
-      Long openTime = response.getOpenTime();
-      Candlestick updateCandlestick = candlesticksCache.get(openTime);
-      if (updateCandlestick == null) {
-        // new candlestick
-        updateCandlestick = new Candlestick();
-      }
-      // update candlestick with the stream data
-      updateCandlestick.setOpenTime(response.getOpenTime());
-      updateCandlestick.setOpen(response.getOpen());
-      updateCandlestick.setLow(response.getLow());
-      updateCandlestick.setHigh(response.getHigh());
-      updateCandlestick.setClose(response.getClose());
-      updateCandlestick.setCloseTime(response.getCloseTime());
-      updateCandlestick.setVolume(response.getVolume());
-      updateCandlestick.setNumberOfTrades(response.getNumberOfTrades());
-      updateCandlestick.setQuoteAssetVolume(response.getQuoteAssetVolume());
-      updateCandlestick.setTakerBuyQuoteAssetVolume(response.getTakerBuyQuoteAssetVolume());
-      updateCandlestick.setTakerBuyBaseAssetVolume(response.getTakerBuyQuoteAssetVolume());
+    client.onCandlestickEvent(symbol.toLowerCase(), interval, new BinanceApiCallback<CandlestickEvent>() {
+      @Override
+      public void onResponse(CandlestickEvent response) {
+        Long openTime = response.getOpenTime();
+        Candlestick updateCandlestick = candlesticksCache.get(openTime);
+        if (updateCandlestick == null) {
+          // new candlestick
+          updateCandlestick = new Candlestick();
+        }
+        // update candlestick with the stream data
+        updateCandlestick.setOpenTime(response.getOpenTime());
+        updateCandlestick.setOpen(response.getOpen());
+        updateCandlestick.setLow(response.getLow());
+        updateCandlestick.setHigh(response.getHigh());
+        updateCandlestick.setClose(response.getClose());
+        updateCandlestick.setCloseTime(response.getCloseTime());
+        updateCandlestick.setVolume(response.getVolume());
+        updateCandlestick.setNumberOfTrades(response.getNumberOfTrades());
+        updateCandlestick.setQuoteAssetVolume(response.getQuoteAssetVolume());
+        updateCandlestick.setTakerBuyQuoteAssetVolume(response.getTakerBuyQuoteAssetVolume());
+        updateCandlestick.setTakerBuyBaseAssetVolume(response.getTakerBuyQuoteAssetVolume());
 
-      // Store the updated candlestick in the cache
-      candlesticksCache.put(openTime, updateCandlestick);
-      System.out.println(updateCandlestick);
+        // Store the updated candlestick in the cache
+        candlesticksCache.put(openTime, updateCandlestick);
+        System.out.println(updateCandlestick);
+      }
+
+      @Override
+      public void onFailure(Throwable cause) {
+        System.out.println(cause);
+      }
     });
   }
 
